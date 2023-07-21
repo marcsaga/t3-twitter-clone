@@ -4,8 +4,21 @@ import { type RouterOutputs, api } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
+import { LoadingPage } from "~/components/loading";
 
 dayjs.extend(relativeTime);
+
+function Avatar(props: { src: string; author?: string }) {
+  return (
+    <Image
+      className="h-8 w-8 rounded-full"
+      src={props.src}
+      alt={`${props.author} profile image`}
+      height="32"
+      width="32"
+    />
+  );
+}
 
 function CreatePostWizard() {
   const { user } = useUser();
@@ -13,13 +26,7 @@ function CreatePostWizard() {
 
   return (
     <div className="flex gap-3">
-      <Image
-        className="h-8 w-8 rounded-full"
-        src={user.profileImageUrl}
-        alt="profile image"
-        height="32"
-        width="32"
-      />
+      <Avatar src={user.profileImageUrl} author={user.fullName ?? ""} />
       <input
         placeholder="Type some emojis!"
         className="grow bg-transparent outline-none"
@@ -32,13 +39,7 @@ type PostWithAuthor = RouterOutputs["posts"]["getAll"][number];
 function PostView({ author, ...post }: PostWithAuthor) {
   return (
     <div className="flex items-center gap-3 border-b border-slate-400 p-4">
-      <Image
-        className="h-8 w-8 rounded-full"
-        src={author.profileImageUrl}
-        alt={`${author.firstName} profile image`}
-        height="32"
-        width="32"
-      />
+      <Avatar src={author.profileImageUrl} author={author.firstName ?? ""} />
       <div className="flex flex-col gap-1">
         <div className="flex gap-1 text-slate-200">
           <span>{`${author.firstName}`}</span>
@@ -51,14 +52,29 @@ function PostView({ author, ...post }: PostWithAuthor) {
   );
 }
 
-export default function Home() {
+function Feed() {
   const { data, isLoading } = api.posts.getAll.useQuery();
 
-  const { user, isSignedIn } = useUser();
-
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <LoadingPage />;
 
   if (!data) return <div>Something went wrong...</div>;
+
+  return (
+    <div className="flex flex-col">
+      {data.map((post) => (
+        <PostView key={post.id} {...post} />
+      ))}
+    </div>
+  );
+}
+
+export default function Home() {
+  const { user, isSignedIn, isLoaded } = useUser();
+
+  // start fetching asap
+  api.posts.getAll.useQuery();
+
+  if (!isLoaded) return <div />;
 
   return (
     <>
@@ -76,11 +92,7 @@ export default function Home() {
             </div>
             {!isSignedIn ? <SignInButton /> : <CreatePostWizard />}
           </div>
-          <div className="flex flex-col">
-            {data?.map((post) => (
-              <PostView key={post.id} {...post} />
-            ))}
-          </div>
+          <Feed />
         </div>
       </main>
     </>
