@@ -8,7 +8,7 @@ import { Feed } from "~/components/feed";
 import { Avatar } from "~/components/avatar";
 import { z } from "zod";
 import { toast } from "react-hot-toast";
-import classNames from "classnames";
+import { LoadingSpinner } from "~/components/loading";
 
 const isEmoji = z.string().emoji();
 dayjs.extend(relativeTime);
@@ -51,9 +51,12 @@ function CreatePostWizard() {
         value={input}
         onChange={(e) => setInput(e.target.value)}
       />
-      <button disabled={isCreating}>
-        <span className={classNames({ "opacity-60": isCreating })}>Post</span>
-      </button>
+      {!isCreating && input !== "" && (
+        <button>
+          <span>Post</span>
+        </button>
+      )}
+      {isCreating && <LoadingSpinner />}
     </form>
   );
 }

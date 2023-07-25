@@ -1,5 +1,5 @@
 import { type RouterOutputs, api } from "~/utils/api";
-import { LoadingPage } from "./loading";
+import { LoadingPage, LoadingSpinner } from "./loading";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Avatar } from "./avatar";
@@ -27,14 +27,12 @@ export function PostView({ author, ...post }: PostWithAuthor) {
               {dayjs(post.createdAt).fromNow()}
             </span>
           </div>
-          {author.id === user?.id && (
-            <button
-              disabled={deletingPost}
-              onClick={() => mutate({ id: post.id })}
-            >
+          {!deletingPost && author.id === user?.id && (
+            <button onClick={() => mutate({ id: post.id })}>
               <span>🗑️</span>
             </button>
           )}
+          {deletingPost && <LoadingSpinner height={16} width={16} />}
         </div>
         <span className="text-xl">{post.content}</span>
       </div>
