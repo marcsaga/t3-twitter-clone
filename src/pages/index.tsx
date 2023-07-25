@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
 import { LoadingPage } from "~/components/loading";
+import { useState } from "react";
 
 dayjs.extend(relativeTime);
 
@@ -22,29 +23,62 @@ function Avatar(props: { src: string; author?: string }) {
 
 function CreatePostWizard() {
   const { user } = useUser();
+  const [input, setInput] = useState("");
+  const ctx = api.useContext();
+  const { mutate } = api.posts.create.useMutation({
+    onMutate: () => {
+      ctx.posts.getAll.setData(undefined, (prev) => {
+        const opPost = {
+          id: Math.random().toString(),
+          content: input,
+          createdAt: new Date(),
+          author: {
+            firstName: user!.firstName!,
+            id: user!.id,
+            profileImageUrl: user!.profileImageUrl,
+          },
+        };
+        setInput("");
+        return [opPost, ...(prev ?? [])];
+      });
+    },
+    onSuccess: () => void ctx.posts.getAll.invalidate(),
+  });
+
   if (!user) return null;
 
   return (
-    <div className="flex gap-3">
+    <form
+      className="flex gap-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        mutate({ content: input });
+      }}
+    >
       <Avatar src={user.profileImageUrl} author={user.fullName ?? ""} />
       <input
         placeholder="Type some emojis!"
         className="grow bg-transparent outline-none"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
       />
-    </div>
+      <button>Post</button>
+    </form>
   );
 }
 
 type PostWithAuthor = RouterOutputs["posts"]["getAll"][number];
 function PostView({ author, ...post }: PostWithAuthor) {
   return (
-    <div className="flex items-center gap-3 border-b border-slate-400 p-4">
+    <div className="flex items-center gap-4 border-b border-slate-400 p-4">
       <Avatar src={author.profileImageUrl} author={author.firstName ?? ""} />
       <div className="flex flex-col gap-1">
-        <div className="flex gap-1 text-slate-200">
+        <div className="flex items-center gap-1 text-slate-200">
           <span>{`${author.firstName}`}</span>
           <span>·</span>
-          <span className="font-thin">{dayjs(post.createdAt).fromNow()}</span>
+          <span className="text-sm font-thin">
+            {dayjs(post.createdAt).fromNow()}
+          </span>
         </div>
         <span className="text-xl">{post.content}</span>
       </div>
@@ -85,9 +119,9 @@ export default function Home() {
       </Head>
       <main className="flex h-screen justify-center">
         <div className="w-full border-x border-slate-400 md:max-w-2xl">
-          <div className="flex flex-col gap-4 border-b border-slate-400 p-4">
-            <div className="flex items-center justify-between gap-4">
-              <h1 className="text-xl font-medium">Twitter t3</h1>
+          <div className="flex flex-col gap-8 border-b border-slate-400 p-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-medium">Twitter t3</h1>
               <span className="font-extralight">Hello {user?.fullName}</span>
             </div>
             {!isSignedIn ? <SignInButton /> : <CreatePostWizard />}
