@@ -63,6 +63,7 @@ function CreatePostWizard() {
 
 export default function Home() {
   const { user, isSignedIn, isLoaded } = useUser();
+  console.log("🚀 ~ file: index.tsx:66 ~ Home ~ user:", user);
 
   // start fetching asap
   api.posts.getAll.useQuery();
@@ -81,7 +82,7 @@ export default function Home() {
           <div className="flex flex-col gap-8 border-b border-slate-400 p-4">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-medium">Twitter t3</h1>
-              <span className="font-extralight">Hello {user?.fullName}</span>
+              <span className="font-extralight">Hello @{user?.username}</span>
             </div>
             {!isSignedIn ? <SignInButton /> : <CreatePostWizard />}
           </div>

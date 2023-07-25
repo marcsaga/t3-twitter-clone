@@ -17,11 +17,11 @@ export function PostView({ author, ...post }: PostWithAuthor) {
 
   return (
     <div className="flex items-center gap-4 border-b border-slate-400 p-4">
-      <Avatar src={author.profileImageUrl} author={author.firstName ?? ""} />
+      <Avatar src={author.profileImageUrl} author={author.username ?? ""} />
       <div className="flex grow flex-col gap-1">
         <div className="flex justify-between gap-1 text-slate-200">
           <div className="flex items-center gap-1">
-            <span>{`${author.firstName}`}</span>
+            <span>{`@${author.username}`}</span>
             <span>·</span>
             <span className="text-xs font-thin">
               {dayjs(post.createdAt).fromNow()}
