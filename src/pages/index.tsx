@@ -1,48 +1,32 @@
 import { SignInButton, useUser } from "@clerk/nextjs";
 import Head from "next/head";
-import { type RouterOutputs, api } from "~/utils/api";
+import { api } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import Image from "next/image";
-import { LoadingPage } from "~/components/loading";
 import { useState } from "react";
+import { Feed } from "~/components/feed";
+import { Avatar } from "~/components/avatar";
+import { z } from "zod";
+import { toast } from "react-hot-toast";
+import classNames from "classnames";
 
+const isEmoji = z.string().emoji();
 dayjs.extend(relativeTime);
-
-function Avatar(props: { src: string; author?: string }) {
-  return (
-    <Image
-      className="h-8 w-8 rounded-full"
-      src={props.src}
-      alt={`${props.author} profile image`}
-      height="32"
-      width="32"
-    />
-  );
-}
 
 function CreatePostWizard() {
   const { user } = useUser();
   const [input, setInput] = useState("");
   const ctx = api.useContext();
-  const { mutate } = api.posts.create.useMutation({
-    onMutate: () => {
-      ctx.posts.getAll.setData(undefined, (prev) => {
-        const opPost = {
-          id: Math.random().toString(),
-          content: input,
-          createdAt: new Date(),
-          author: {
-            firstName: user!.firstName!,
-            id: user!.id,
-            profileImageUrl: user!.profileImageUrl,
-          },
-        };
-        setInput("");
-        return [opPost, ...(prev ?? [])];
-      });
-    },
+  const { mutate, isLoading: isCreating } = api.posts.create.useMutation({
     onSuccess: () => void ctx.posts.getAll.invalidate(),
+    onError: (error) => {
+      const errorMessage = error.data?.zodError?.fieldErrors.content?.[0];
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else {
+        toast.error("Something went wrong");
+      }
+    },
   });
 
   if (!user) return null;
@@ -52,7 +36,12 @@ function CreatePostWizard() {
       className="flex gap-3"
       onSubmit={(event) => {
         event.preventDefault();
-        mutate({ content: input });
+        if (!isEmoji.safeParse(input).success) {
+          toast.error("Invalid emoji");
+        } else {
+          mutate({ content: input });
+        }
+        setInput("");
       }}
     >
       <Avatar src={user.profileImageUrl} author={user.fullName ?? ""} />
@@ -62,43 +51,10 @@ function CreatePostWizard() {
         value={input}
         onChange={(e) => setInput(e.target.value)}
       />
-      <button>Post</button>
+      <button disabled={isCreating}>
+        <span className={classNames({ "opacity-60": isCreating })}>Post</span>
+      </button>
     </form>
-  );
-}
-
-type PostWithAuthor = RouterOutputs["posts"]["getAll"][number];
-function PostView({ author, ...post }: PostWithAuthor) {
-  return (
-    <div className="flex items-center gap-4 border-b border-slate-400 p-4">
-      <Avatar src={author.profileImageUrl} author={author.firstName ?? ""} />
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-1 text-slate-200">
-          <span>{`${author.firstName}`}</span>
-          <span>·</span>
-          <span className="text-sm font-thin">
-            {dayjs(post.createdAt).fromNow()}
-          </span>
-        </div>
-        <span className="text-xl">{post.content}</span>
-      </div>
-    </div>
-  );
-}
-
-function Feed() {
-  const { data, isLoading } = api.posts.getAll.useQuery();
-
-  if (isLoading) return <LoadingPage />;
-
-  if (!data) return <div>Something went wrong...</div>;
-
-  return (
-    <div className="flex flex-col">
-      {data.map((post) => (
-        <PostView key={post.id} {...post} />
-      ))}
-    </div>
   );
 }
 

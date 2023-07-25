@@ -54,4 +54,20 @@ export const postRouter = createTRPCRouter({
       return { post };
     }),
 
+  delete: privateProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const post = await ctx.prisma.post.findUnique({
+        where: { id: input.id },
+      });
+      if (post?.authorId !== ctx.currentUserId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "post can only be deleted by the author",
+        });
+      }
+      await ctx.prisma.post.delete({
+        where: { id: input.id, authorId: ctx.currentUserId },
+      });
+    }),
 });
