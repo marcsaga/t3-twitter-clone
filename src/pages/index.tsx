@@ -1,4 +1,4 @@
-import { SignInButton, useUser } from "@clerk/nextjs";
+import { SignInButton, useUser, SignOutButton } from "@clerk/nextjs";
 import { api } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -72,12 +72,18 @@ export default function Home() {
   return (
     <PageLayout>
       <div className="flex flex-col gap-8 border-b border-slate-400 p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-medium">Twitter t3</h1>
-          {isSignedIn && (
-            <span className="font-extralight">Hello @{user?.username}</span>
-          )}
-        </div>
+        {isSignedIn && (
+          <div className="flex items-center justify-between">
+            <span className="text-xl font-extralight">
+              Hello @{user?.username}
+            </span>
+            <SignOutButton>
+              <button title="sign out" className="ml-3">
+                <span>🚪</span>
+              </button>
+            </SignOutButton>
+          </div>
+        )}
         {!isSignedIn ? <SignInButton /> : <CreatePostWizard />}
       </div>
       <Feed />
