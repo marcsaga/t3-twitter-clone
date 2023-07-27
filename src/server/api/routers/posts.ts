@@ -1,4 +1,5 @@
 import { clerkClient } from "@clerk/nextjs";
+import { type Post } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
@@ -8,37 +9,48 @@ import {
 } from "~/server/api/trpc";
 import { filterUserForClient } from "~/server/helpers/filterUserForClient";
 
+const addUserDataToPosts = async (posts: Post[]) => {
+  const users = (
+    await clerkClient.users.getUserList({
+      userId: posts.map((post) => post.authorId),
+      limit: 100,
+    })
+  ).map(filterUserForClient);
+
+  const userById = new Map(users.map((user) => [user.id, user]));
+
+  return posts.map(({ authorId, ...post }) => {
+    const author = userById.get(authorId);
+    if (!author?.username) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Author for post not found",
+      });
+    }
+    return { ...post, author: { ...author, username: author.username } };
+  });
+};
+
 export const postRouter = createTRPCRouter({
-  getAll: publicProcedure
-    .input(z.object({ authorId: z.string().nullish() }))
+  getAll: publicProcedure.query(async ({ ctx }) => {
+    const posts = await ctx.prisma.post.findMany({
+      take: 100,
+      orderBy: [{ createdAt: "desc" }],
+    });
+
+    return addUserDataToPosts(posts);
+  }),
+
+  getAllByUserId: publicProcedure
+    .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const posts = await ctx.prisma.post.findMany({
-        where: {
-          ...(input.authorId ? { authorId: input.authorId } : {}),
-        },
+        where: { authorId: input.userId },
         take: 100,
         orderBy: [{ createdAt: "desc" }],
       });
 
-      const users = (
-        await clerkClient.users.getUserList({
-          userId: posts.map((post) => post.authorId),
-          limit: 100,
-        })
-      ).map(filterUserForClient);
-
-      const userById = new Map(users.map((user) => [user.id, user]));
-
-      return posts.map(({ authorId, ...post }) => {
-        const author = userById.get(authorId);
-        if (!author?.username) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Author for post not found",
-          });
-        }
-        return { ...post, author: { ...author, username: author.username } };
-      });
+      return addUserDataToPosts(posts);
     }),
 
   create: privateProcedure

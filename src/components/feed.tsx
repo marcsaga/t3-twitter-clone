@@ -43,14 +43,19 @@ export function PostView({ author, ...post }: PostWithAuthor) {
   );
 }
 
-interface FeedProps {
-  autorId?: string;
+function getPosts(userId?: string) {
+  if (userId) {
+    return api.posts.getAllByUserId.useQuery({ userId });
+  }
+  return api.posts.getAll.useQuery();
 }
 
-export function Feed(props: FeedProps) {
-  const { data, isLoading } = api.posts.getAll.useQuery({
-    authorId: props.autorId,
-  });
+interface ProfileFeedProps {
+  userId?: string;
+}
+
+export function Feed(props: ProfileFeedProps) {
+  const { data, isLoading } = getPosts(props.userId);
 
   if (isLoading) return <LoadingPage />;
 

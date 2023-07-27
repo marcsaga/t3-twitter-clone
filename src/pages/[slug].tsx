@@ -34,7 +34,7 @@ export const UserProfile = (props: { username: string; color: string }) => {
             <h1 className="text-xl font-medium">@{props.username}</h1>
           </div>
         </div>
-        <Feed />
+        <Feed userId={data.user.id} />
       </PageLayout>
     </>
   );

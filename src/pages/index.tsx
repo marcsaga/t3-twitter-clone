@@ -65,7 +65,7 @@ export default function Home() {
   const { user, isSignedIn, isLoaded } = useUser();
 
   // start fetching asap
-  api.posts.getAll.useQuery({});
+  api.posts.getAll.useQuery();
 
   if (!isLoaded) return <div />;
 
