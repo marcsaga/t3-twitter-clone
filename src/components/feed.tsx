@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Avatar } from "./avatar";
 import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
 
 dayjs.extend(relativeTime);
 
@@ -20,13 +21,15 @@ export function PostView({ author, ...post }: PostWithAuthor) {
       <Avatar src={author.profileImageUrl} author={author.username ?? ""} />
       <div className="flex grow flex-col gap-1">
         <div className="flex justify-between gap-1 text-slate-200">
-          <div className="flex items-center gap-1">
-            <span>{`@${author.username}`}</span>
-            <span>·</span>
-            <span className="text-xs font-thin">
-              {dayjs(post.createdAt).fromNow()}
-            </span>
-          </div>
+          <Link href={`/@${author.username}`}>
+            <div className="flex items-center gap-1">
+              <span>{`@${author.username}`}</span>
+              <span>·</span>
+              <span className="text-xs font-thin">
+                {dayjs(post.createdAt).fromNow()}
+              </span>
+            </div>
+          </Link>
           {!deletingPost && author.id === user?.id && (
             <button onClick={() => mutate({ id: post.id })}>
               <span>🗑️</span>
@@ -40,8 +43,14 @@ export function PostView({ author, ...post }: PostWithAuthor) {
   );
 }
 
-export function Feed() {
-  const { data, isLoading } = api.posts.getAll.useQuery();
+interface FeedProps {
+  autorId?: string;
+}
+
+export function Feed(props: FeedProps) {
+  const { data, isLoading } = api.posts.getAll.useQuery({
+    authorId: props.autorId,
+  });
 
   if (isLoading) return <LoadingPage />;
 
