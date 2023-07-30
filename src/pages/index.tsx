@@ -31,7 +31,7 @@ function CreatePostWizard() {
   const {
     handleSubmit,
     register,
-    formState: { errors },
+    formState: { errors, isValid },
     reset,
   } = useForm<NewPost>({ resolver: zodResolver(formSchema) });
   const ctx = api.useContext();
@@ -69,8 +69,8 @@ function CreatePostWizard() {
         placeholder="Type some emojis!"
         className="grow bg-transparent outline-none"
       />
-      {errors.content === undefined && (
-        <button>
+      {isValid && (
+        <button disabled={errors.content === undefined}>
           <span>Post</span>
         </button>
       )}
