@@ -18,7 +18,9 @@ export function PostView({ author, ...post }: PostWithAuthor) {
 
   return (
     <div className="flex items-center gap-4 border-b border-slate-400 p-4">
-      <Avatar src={author.profileImageUrl} author={author.username ?? ""} />
+      <Link href={`/@${author.username}`}>
+        <Avatar src={author.profileImageUrl} author={author.username ?? ""} />
+      </Link>
       <div className="flex grow flex-col gap-1">
         <div className="flex justify-between gap-1 text-slate-200">
           <Link href={`/@${author.username}`}>

@@ -2,23 +2,43 @@ import { SignInButton, useUser, SignOutButton } from "@clerk/nextjs";
 import { api } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { useState } from "react";
 import { Feed } from "~/components/feed";
 import { Avatar } from "~/components/avatar";
 import { z } from "zod";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "~/components/loading";
 import { PageLayout } from "~/components/layout";
+import {
+  type SubmitErrorHandler,
+  type SubmitHandler,
+  useForm,
+} from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-const isEmoji = z.string().emoji();
 dayjs.extend(relativeTime);
+
+const formSchema = z.object({
+  content: z.string().emoji(),
+});
+
+interface NewPost {
+  content: string;
+}
 
 function CreatePostWizard() {
   const { user } = useUser();
-  const [input, setInput] = useState("");
+  const {
+    handleSubmit,
+    register,
+    formState: { errors },
+    reset,
+  } = useForm<NewPost>({ resolver: zodResolver(formSchema) });
   const ctx = api.useContext();
   const { mutate, isLoading: isCreating } = api.posts.create.useMutation({
-    onSuccess: () => void ctx.posts.getAll.invalidate(),
+    onSuccess: () => {
+      void ctx.posts.getAll.invalidate();
+      reset();
+    },
     onError: (error) => {
       const errorMessage = error.data?.zodError?.fieldErrors.content?.[0];
       if (errorMessage) {
@@ -29,29 +49,25 @@ function CreatePostWizard() {
     },
   });
 
+  const onSubmit: SubmitHandler<NewPost> = (data) => {
+    mutate(data);
+  };
+
+  const onInvalid: SubmitErrorHandler<NewPost> = (errors) => {
+    toast.error(errors.content?.message ?? "Something went wrong");
+  };
+
   if (!user) return null;
 
   return (
-    <form
-      className="flex gap-3"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (!isEmoji.safeParse(input).success) {
-          toast.error("Invalid emoji");
-        } else {
-          mutate({ content: input });
-        }
-        setInput("");
-      }}
-    >
+    <form className="flex gap-3" onSubmit={handleSubmit(onSubmit, onInvalid)}>
       <Avatar src={user.profileImageUrl} author={user.fullName ?? ""} />
       <input
+        {...register("content", { required: true })}
         placeholder="Type some emojis!"
         className="grow bg-transparent outline-none"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
       />
-      {!isCreating && input !== "" && (
+      {errors.content === undefined && (
         <button>
           <span>Post</span>
         </button>
