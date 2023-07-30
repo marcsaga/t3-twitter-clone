@@ -14,6 +14,7 @@ import {
   useForm,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 
 dayjs.extend(relativeTime);
 
@@ -88,14 +89,14 @@ export default function Home() {
   return (
     <PageLayout>
       <div className="flex flex-col gap-8 border-b border-slate-400 p-4">
-        {isSignedIn && (
+        {isSignedIn && user && (
           <div className="flex items-center justify-between">
             <span className="text-xl font-extralight">
-              Hello @{user?.username}
+              Hello <Link href={`/@${user?.username}`}>@{user?.username}</Link>
             </span>
             <SignOutButton>
               <button title="sign out" className="ml-3">
-                <span>🚪</span>
+                <span className="text-xl">🚪</span>
               </button>
             </SignOutButton>
           </div>

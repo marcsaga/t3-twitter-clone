@@ -13,7 +13,10 @@ export function PostView({ author, ...post }: PostWithAuthor) {
   const { user } = useUser();
   const ctx = api.useContext();
   const { mutate, isLoading: deletingPost } = api.posts.delete.useMutation({
-    onSuccess: () => void ctx.posts.getAll.invalidate(),
+    onSuccess: () => {
+      void ctx.posts.getAll.invalidate();
+      void ctx.posts.getAllByUserId.invalidate({ userId: author.id });
+    },
   });
 
   return (
@@ -65,6 +68,11 @@ export function Feed(props: ProfileFeedProps) {
 
   return (
     <div className="flex flex-col">
+      {data.length === 0 && (
+        <div className="flex justify-center pt-10">
+          <p className="text-sm">No posts yet</p>
+        </div>
+      )}
       {data.map((post) => (
         <PostView key={post.id} {...post} />
       ))}
