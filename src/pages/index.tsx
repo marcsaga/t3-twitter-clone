@@ -69,8 +69,8 @@ function CreatePostWizard() {
         placeholder="Type some emojis!"
         className="grow bg-transparent outline-none"
       />
-      {isValid && (
-        <button disabled={errors.content === undefined}>
+      {isValid && !isCreating && (
+        <button>
           <span>Post</span>
         </button>
       )}

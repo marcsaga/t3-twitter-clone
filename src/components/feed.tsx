@@ -12,7 +12,11 @@ type PostWithAuthor = RouterOutputs["posts"]["getAll"][number];
 export function PostView({ author, ...post }: PostWithAuthor) {
   const { user } = useUser();
   const ctx = api.useContext();
-  const { mutate, isLoading: deletingPost } = api.posts.delete.useMutation({
+  const {
+    mutate,
+    isLoading: deletingPost,
+    isSuccess: postDeleted,
+  } = api.posts.delete.useMutation({
     onSuccess: () => {
       void ctx.posts.getAll.invalidate();
       void ctx.posts.getAllByUserId.invalidate({ userId: author.id });
@@ -35,12 +39,14 @@ export function PostView({ author, ...post }: PostWithAuthor) {
               </span>
             </div>
           </Link>
-          {!deletingPost && author.id === user?.id && (
+          {!deletingPost && !postDeleted && author.id === user?.id && (
             <button onClick={() => mutate({ id: post.id })}>
               <span>🗑️</span>
             </button>
           )}
-          {deletingPost && <LoadingSpinner height={16} width={16} />}
+          {(deletingPost || postDeleted) && (
+            <LoadingSpinner height={16} width={16} />
+          )}
         </div>
         <span className="text-xl">{post.content}</span>
       </div>
