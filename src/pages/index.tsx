@@ -50,7 +50,8 @@ function CreatePostWizard() {
     },
   });
 
-  const onSubmit: SubmitHandler<NewPost> = (data) => {
+  const onSubmit: SubmitHandler<NewPost> = (data, event) => {
+    event?.preventDefault();
     mutate(data);
   };
 
